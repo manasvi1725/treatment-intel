@@ -48,9 +48,9 @@ export function SideEffectsChart({ data }: { data: TreatmentData }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-80">
+        <div className="h-[720px] w-full overflow-x-auto">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data.sideEffects} layout="vertical">
+            <BarChart data={data.sideEffects} layout="vertical" margin={{ top: 10, right: 20, left: 20, bottom: 10 }}>
               <CartesianGrid
                 strokeDasharray="3 3"
                 className="stroke-border/40"
@@ -65,7 +65,8 @@ export function SideEffectsChart({ data }: { data: TreatmentData }) {
               <YAxis
                 type="category"
                 dataKey="name"
-                width={100}
+                interval={0}
+                width={180}
                 tick={{ fill: "oklch(0.5 0.02 240)", fontSize: 12 }}
               />
               <Tooltip content={<CustomTooltip />} />

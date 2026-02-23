@@ -12,6 +12,9 @@ def root():
 @app.get("/treatment/{name}")
 def get_treatment(name: str):
 
+    # 🔥 DEBUG LOG
+    print("BACKEND HIT:", name)
+
     result = get_treatment_data(name)
 
     return result

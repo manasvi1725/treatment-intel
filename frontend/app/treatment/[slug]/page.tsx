@@ -22,24 +22,38 @@ export default async function TreatmentPage({
   params: Promise<{ slug: string }>
 }) {
 
-  // ✅ unwrap params first
   const { slug } = await params
 
-  // ✅ now use slug variable ONLY
-  const res = await fetch(
-    `http://127.0.0.1:5000/treatment/${slug}`,
-    { cache: "no-store" }
-  )
+  let response
 
-  if (!res.ok) {
-    throw new Error("Backend fetch failed")
+  try {
+    const res = await fetch(
+      `http://127.0.0.1:5000/treatment/${slug}`,
+      {
+        cache: "no-store",
+        next: { revalidate: 0 },
+      }
+    )
+
+    if (!res.ok) {
+      return (
+        <div className="p-10 text-center text-muted-foreground">
+          Generating treatment intelligence for <b>{slug}</b>… ⏳
+        </div>
+      )
+    }
+
+    response = await res.json()
+
+  } catch (err) {
+    return (
+      <div className="p-10 text-center text-muted-foreground">
+        Connecting to intelligence engine… ⏳
+      </div>
+    )
   }
 
-  const response = await res.json()
-
-
-const raw = response.data
-
+  const raw = response.data
 const data: TreatmentData = {
   name: raw.treatment,
   slug: raw.treatment,
