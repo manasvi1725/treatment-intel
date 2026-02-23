@@ -1,0 +1,14 @@
+beautifulsoup4
+requests
+tqdm
+scikit-learn
+numpy
+pandas
+vaderSentiment
+google-generativeai
+python-dotenv
+fastapi
+uvicorn 
+newspaper3k
+lxml[html_clean]
+google-search-results
