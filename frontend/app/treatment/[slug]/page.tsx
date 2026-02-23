@@ -1,6 +1,3 @@
-"use client"
-
-import { use } from "react"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -13,20 +10,82 @@ import { SentimentPanel } from "@/components/treatment/sentiment-panel"
 import { RecoveryTimeline } from "@/components/treatment/recovery-timeline"
 import { CombinationTherapies } from "@/components/treatment/combination-therapies"
 import { SourceTraceability } from "@/components/treatment/source-traceability"
-import { getTreatmentData } from "@/lib/treatment-data"
+import type { TreatmentData } from "@/lib/treatment-data"
 
-export default function TreatmentPage({
+interface PageProps {
+  params: { slug: string }
+}
+
+export default async function TreatmentPage({
   params,
 }: {
   params: Promise<{ slug: string }>
 }) {
-  const { slug } = use(params)
-  const data = getTreatmentData(slug)
 
+  // ✅ unwrap params first
+  const { slug } = await params
+
+  // ✅ now use slug variable ONLY
+  const res = await fetch(
+    `http://127.0.0.1:5000/treatment/${slug}`,
+    { cache: "no-store" }
+  )
+
+  if (!res.ok) {
+    throw new Error("Backend fetch failed")
+  }
+
+  const response = await res.json()
+
+
+const raw = response.data
+
+const data: TreatmentData = {
+  name: raw.treatment,
+  slug: raw.treatment,
+
+  summary: raw.overview?.summary ?? "",
+  procedure: raw.overview?.procedure ?? "",
+  recommended: raw.overview?.recommendedFor ?? "",
+
+  stats: {
+    sentimentScore: raw.sentiment?.positive ?? 0,
+    recoveryTime: "Varies",
+    sideEffectSeverity: "Moderate",
+    discussionVolume: String(
+      raw.sources?.reduce(
+        (acc: number, s: any) => acc + (s.discussions || 0),
+        0
+      ) || 0
+    ),
+  },
+
+  sideEffects: raw.sideEffects ?? [],
+
+  sentiment: raw.sentiment ?? {
+    positive: 0,
+    neutral: 0,
+    negative: 0,
+    emotions: [],
+  },
+
+  recovery: raw.recovery?.stages ?? [],
+
+  combinations:
+    raw.combinations?.topCombinations?.map((c: any) => ({
+      therapy: c.name,
+      coUsage: c.coUsage,
+      effectiveness: c.effectiveness,
+    })) ?? [],
+
+  sources: raw.sources ?? [],
+}
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+
       <main className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
+
         {/* Breadcrumb */}
         <div className="mb-6 flex items-center gap-3">
           <Link href="/">
@@ -47,43 +106,29 @@ export default function TreatmentPage({
               Deep Dive
             </Badge>
           </div>
+
           <p className="max-w-2xl text-muted-foreground">
             Comprehensive treatment intelligence aggregated from{" "}
-            {data.stats.discussionVolume} patient discussions across forums,
-            blogs, and social media.
+            {data.stats.discussionVolume} patient discussions.
           </p>
         </div>
 
-        {/* Sequential intelligence blocks */}
+        {/* Blocks */}
         <div className="flex flex-col gap-6">
-          {/* Block 1 - Summary */}
           <TreatmentSummary data={data} />
-
-          {/* Block 2 - Key Stats */}
           <TreatmentKeyStats data={data} />
-
-          {/* Block 3 - Side Effects */}
           <SideEffectsChart data={data} />
-
-          {/* Block 4 - Sentiment */}
           <SentimentPanel data={data} />
 
-          {/* Block 5 - Recovery + Block 6 - Combinations */}
           <div className="grid gap-6 lg:grid-cols-2">
             <RecoveryTimeline data={data} />
             <CombinationTherapies data={data} />
           </div>
 
-          {/* Block 7 - Sources */}
           <SourceTraceability data={data} />
         </div>
-      </main>
 
-      <footer className="mt-12 border-t border-border/50 py-8">
-        <div className="mx-auto max-w-7xl px-4 text-center text-sm text-muted-foreground lg:px-6">
-          Treatment Intelligence Engine. AI-powered patient discussion analytics platform.
-        </div>
-      </footer>
+      </main>
     </div>
   )
 }

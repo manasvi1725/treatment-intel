@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-from pipeline.master_pipeline import run_full_pipeline
 
 app = FastAPI()
 
@@ -13,7 +12,11 @@ def root():
 def run_pipeline(treatment: str):
 
     try:
+        # Lazy import prevents startup blocking
+        from pipeline.master_pipeline import run_full_pipeline
+
         result = run_full_pipeline(treatment)
+
         return result
 
     except Exception as e:

@@ -8,7 +8,6 @@ from collections import Counter
 # -----------------------------
 analyzer = SentimentIntensityAnalyzer()
 
-
 # -----------------------------
 # Sentiment Classification
 # -----------------------------
