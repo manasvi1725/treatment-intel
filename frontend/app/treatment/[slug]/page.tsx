@@ -58,10 +58,20 @@ const data: TreatmentData = {
   name: raw.treatment,
   slug: raw.treatment,
 
-  summary: raw.overview?.summary ?? "",
-  procedure: raw.overview?.procedure ?? "",
-  recommended: raw.overview?.recommendedFor ?? "",
+  summary:
+  typeof raw.overview?.summary === "string"
+    ? raw.overview.summary
+    : raw.overview?.summary?.description ?? "",
 
+procedure:
+  typeof raw.overview?.procedure === "string"
+    ? raw.overview.procedure
+    : raw.overview?.procedure?.description ?? "",
+
+recommended:
+  typeof raw.overview?.recommendedFor === "string"
+    ? raw.overview.recommendedFor
+    : raw.overview?.recommendedFor?.description ?? "",
   stats: {
     sentimentScore: raw.sentiment?.positive ?? 0,
     recoveryTime: "Varies",
@@ -85,12 +95,17 @@ const data: TreatmentData = {
 
   recovery: raw.recovery?.stages ?? [],
 
-  combinations:
+  combinations: {
+  topCombinations:
     raw.combinations?.topCombinations?.map((c: any) => ({
       therapy: c.name,
       coUsage: c.coUsage,
       effectiveness: c.effectiveness,
     })) ?? [],
+
+  combinationLookup:
+    raw.combinations?.combinationLookup ?? {},
+},
 
   sources: raw.sources ?? [],
 }

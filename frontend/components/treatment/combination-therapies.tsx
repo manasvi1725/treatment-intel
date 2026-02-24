@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import {
   BarChart,
   Bar,
@@ -10,35 +11,35 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import type { TreatmentData } from "@/lib/treatment-data"
 
-function CustomTooltip({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean
-  payload?: Array<{ name: string; value: number; color: string }>
-  label?: string
-}) {
-  if (!active || !payload) return null
-  return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-lg">
-      <p className="mb-1 text-xs font-medium text-foreground">{label}</p>
-      {payload.map((item, i) => (
-        <p key={i} className="text-xs text-muted-foreground">
-          <span style={{ color: item.color }}>{item.name}</span>:{" "}
-          <span className="font-mono font-medium text-foreground">
-            {item.value}%
-          </span>
-        </p>
-      ))}
-    </div>
-  )
-}
+import { Input } from "@/components/ui/input"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card"
+
+import type { TreatmentData } from "@/lib/treatment-data"
+import { se } from "date-fns/locale"
 
 export function CombinationTherapies({ data }: { data: TreatmentData }) {
+  const [search, setSearch] = useState("")
+
+const lookup =
+  data?.combinations?.combinationLookup ?? {}
+
+const searchKey = search.toLowerCase().trim()
+
+const matches =
+  searchKey.length === 0
+    ? []
+    : Object.entries(lookup).filter(([key]) =>
+        key.toLowerCase().includes(searchKey)
+      )
+console.log("COMBINATIONS:", data.combinations)
+
   return (
     <Card>
       <CardHeader>
@@ -47,41 +48,82 @@ export function CombinationTherapies({ data }: { data: TreatmentData }) {
           Co-treatment intelligence showing usage patterns and effectiveness
         </CardDescription>
       </CardHeader>
+
       <CardContent>
+
+        {/* 📊 CHART (unchanged) */}
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data.combinations}>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                className="stroke-border/40"
-              />
-              <XAxis
-                dataKey="therapy"
-                tick={{ fill: "oklch(0.5 0.02 240)", fontSize: 12 }}
-              />
-              <YAxis
-                tick={{ fill: "oklch(0.5 0.02 240)", fontSize: 12 }}
-                tickFormatter={(v) => `${v}%`}
-                domain={[0, 100]}
-              />
-              <Tooltip content={<CustomTooltip />} />
+            <BarChart data={data.combinations.topCombinations}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" />
+
+              <XAxis dataKey="therapy" />
+              <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+
+              <Tooltip />
               <Legend />
+
               <Bar
                 dataKey="coUsage"
                 name="Co-Usage Rate"
                 fill="oklch(0.75 0.18 195)"
                 radius={[6, 6, 0, 0]}
-                barSize={24}
               />
+
               <Bar
                 dataKey="effectiveness"
                 name="Reported Effectiveness"
                 fill="oklch(0.70 0.17 165)"
                 radius={[6, 6, 0, 0]}
-                barSize={24}
               />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+
+        {/* 🔎 SEARCH BELOW CHART */}
+        <div className="mt-6 space-y-3">
+
+          <Input
+            placeholder="Search combination therapy…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+
+          {search && (
+  <div className="rounded-lg border border-border p-4 text-sm space-y-3">
+
+    {matches.length > 0 ? (
+      matches.map(([name, val]) => (
+        <div key={name} className="border-b pb-2 last:border-0">
+
+          <p className="font-medium text-foreground">
+            {name}
+          </p>
+
+          <p className="text-muted-foreground">
+            Co-Usage Rate:
+            <span className="font-medium text-foreground">
+              {" "}{val.coUsage}%
+            </span>
+          </p>
+
+          <p className="text-muted-foreground">
+            Reported Effectiveness:
+            <span className="font-medium text-foreground">
+              {" "}{val.effectiveness}%
+            </span>
+          </p>
+
+        </div>
+      ))
+    ) : (
+      <p className="text-muted-foreground">
+        No combination data available for this therapy.
+      </p>
+    )}
+
+  </div>
+)}
         </div>
       </CardContent>
     </Card>

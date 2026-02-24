@@ -14,10 +14,9 @@ from dotenv import load_dotenv
 load_dotenv()
 SERP_API_KEY = os.getenv("SERP_API_KEY")
 
-def multi_category_discovery(treatment, num_results=20):
+def multi_category_discovery(treatment, num_results=10, max_total=120):
 
     query_types = [
-
         # Clinical / Evidence
         f"{treatment} treatment clinical trials",
         f"{treatment} medical research paper",
@@ -49,9 +48,12 @@ def multi_category_discovery(treatment, num_results=20):
         f"{treatment} adjunct therapy research"
     ]
 
-    all_urls = []
+    unique_urls = set()
 
     for query in query_types:
+
+        if len(unique_urls) >= max_total:
+            break
 
         print(f"\nSearching: {query}")
 
@@ -67,13 +69,18 @@ def multi_category_discovery(treatment, num_results=20):
 
         if "organic_results" in results:
             for r in results["organic_results"]:
-                all_urls.append(r["link"])
 
-    return list(set(all_urls))
+                clean_url = r["link"].split("?")[0]
 
+                if clean_url not in unique_urls:
+                    unique_urls.add(clean_url)
 
+                if len(unique_urls) >= max_total:
+                    break
 
+    print("\nTotal unique URLs collected:", len(unique_urls))
 
+    return list(unique_urls)
 def classify_url(url):
 
     url_lower = url.lower()
@@ -244,6 +251,74 @@ def remove_duplicates(docs, threshold=0.85):
 # ==============================
 # BUILD FINAL CORPUS
 # ==============================
+def multi_category_discovery(treatment, num_results=10, max_total=120):
+
+    query_types = [
+        # Clinical / Evidence
+        f"{treatment} treatment clinical trials",
+        f"{treatment} medical research paper",
+        f"{treatment} treatment effectiveness study",
+        f"{treatment} survival rate study",
+
+        # Patient Discussions
+        f"{treatment} patient discussion forum",
+        f"{treatment} patient experiences reddit",
+        f"{treatment} support group discussions",
+        f"{treatment} real patient experiences",
+
+        # Recovery Journeys
+        f"{treatment} recovery journey blog",
+        f"{treatment} recovery timeline patients",
+        f"{treatment} life after {treatment}",
+        f"{treatment} post treatment recovery experience",
+
+        # Side Effects
+        f"{treatment} side effects patient reported",
+        f"{treatment} long term side effects",
+        f"{treatment} worst side effects experiences",
+        f"{treatment} side effects forum discussion",
+
+        # Combination Therapies
+        f"{treatment} combination therapy outcomes",
+        f"{treatment} combined with immunotherapy",
+        f"{treatment} multi modality treatment",
+        f"{treatment} adjunct therapy research"
+    ]
+
+    unique_urls = set()
+
+    for query in query_types:
+
+        if len(unique_urls) >= max_total:
+            break
+
+        print(f"\nSearching: {query}")
+
+        params = {
+            "engine": "google",
+            "q": query,
+            "api_key": SERP_API_KEY,
+            "num": num_results
+        }
+
+        search = GoogleSearch(params)
+        results = search.get_dict()
+
+        if "organic_results" in results:
+            for r in results["organic_results"]:
+
+                clean_url = r["link"].split("?")[0]
+
+                if clean_url not in unique_urls:
+                    unique_urls.add(clean_url)
+
+                if len(unique_urls) >= max_total:
+                    break
+
+    print("\nTotal unique URLs collected:", len(unique_urls))
+
+    return list(unique_urls)
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 def build_corpus(classified_urls):
 
@@ -251,46 +326,34 @@ def build_corpus(classified_urls):
 
     print("\n📥 Fetching documents...\n")
 
-    for item in classified_urls:
+    def process(item):
 
         print("Fetching:", item["url"])
 
         content = fetch_content(item["url"], item["type"])
 
         if isinstance(content, str) and len(content) > 300:
-
-            corpus.append({
+            return {
                 "url": item["url"],
                 "type": item["type"],
                 "text": content
-            })
+            }
+
+        return None
+
+    with ThreadPoolExecutor(max_workers=10) as executor:
+
+        futures = [executor.submit(process, item) for item in classified_urls]
+
+        for future in tqdm(as_completed(futures), total=len(futures)):
+            result = future.result()
+            if result:
+                corpus.append(result)
 
     print("Documents collected:", len(corpus))
+    corpus = remove_duplicates(corpus)
 
-    # CLEANING
-    cleaned_corpus = []
-
-
-    for doc in corpus:
-
-        cleaned = clean_text(doc["text"])
-
-        if len(cleaned) > 500:
-
-            cleaned_corpus.append({
-                "url": doc["url"],
-                "type": doc["type"],
-                "text": cleaned
-            })
-
-    print("After cleaning:", len(cleaned_corpus))
-
-    # REMOVE DUPLICATES
-    final_corpus = remove_duplicates(cleaned_corpus)
-
-    print("After deduplication:", len(final_corpus))
-
-    return final_corpus
+    return corpus
 
 
 def split_corpus_by_source(corpus):

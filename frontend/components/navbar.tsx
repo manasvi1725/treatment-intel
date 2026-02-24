@@ -40,7 +40,7 @@ export function Navbar() {
               Dashboard
             </Button>
           </Link>
-          <Link href="/treatment/chemotherapy">
+          <Link href="/explore">
             <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
               <Search className="h-4 w-4" />
               Explore
