@@ -1,7 +1,7 @@
 import requests
 from db.mongo import treatments_collection
-
-ML_SERVICE_URL = "http://localhost:8000/run-pipeline"
+import os
+ML_SERVICE_URL = os.getenv("ML_SERVICE_URL") #"http://localhost:8000/run-pipeline"
 
 
 def get_treatment_data(treatment: str):
