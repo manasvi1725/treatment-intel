@@ -28,7 +28,7 @@ export default async function TreatmentPage({
 
   try {
     const res = await fetch(
-      `http://127.0.0.1:5000/treatment/${slug}`,
+  `https://treatment-intel-1.onrender.com/treatment/${slug}`,  //`http://127.0.0.1:5000/treatment/${slug}`,
       {
         cache: "no-store",
         next: { revalidate: 0 },
