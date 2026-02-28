@@ -45,7 +45,8 @@ def process_pipeline(treatment: str):
                     "data": result,
                     "status": "ready"
                 }
-            }
+            },
+            upsert=True
         )
 
         print(f"Saved {treatment} to Mongo")
