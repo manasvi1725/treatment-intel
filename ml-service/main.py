@@ -1,6 +1,8 @@
 print("ML DIRECTLY HIT")
-from fastapi import FastAPI
+
+from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from db.mongo import treatments_collection
 
 app = FastAPI()
 
@@ -12,24 +14,41 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 def root():
     return {"message": "ML Service Running 🚀"}
 
 
-@app.get("/run-pipeline/{treatment}")
-def run_pipeline(treatment: str):
+@app.post("/run-pipeline/{treatment}")
+def run_pipeline(treatment: str, background_tasks: BackgroundTasks):
+
+    # Start background job
+    background_tasks.add_task(process_pipeline, treatment)
+
+    return {"status": "processing"}
+
+
+def process_pipeline(treatment: str):
 
     try:
-        # Lazy import prevents startup blocking
         from pipeline.master_pipeline import run_full_pipeline
+
+        print(f"Starting pipeline for {treatment}")
 
         result = run_full_pipeline(treatment)
 
-        return result
+        treatments_collection.update_one(
+            {"treatment": treatment},
+            {
+                "$set": {
+                    "data": result,
+                    "status": "ready"
+                }
+            }
+        )
+
+        print(f"Saved {treatment} to Mongo")
 
     except Exception as e:
-        return {
-            "error": str(e),
-            "treatment": treatment
-        }
+        print(f"Pipeline failed for {treatment}: {str(e)}")

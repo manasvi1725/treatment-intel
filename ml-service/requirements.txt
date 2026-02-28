@@ -12,3 +12,4 @@ uvicorn
 newspaper3k
 lxml[html_clean]
 google-search-results
+pymongo
