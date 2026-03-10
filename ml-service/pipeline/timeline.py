@@ -73,12 +73,6 @@ def detect_recovery_stages(corpus, keywords):
 # --------------------------------------------------
 # Completion + Duration Maps
 # --------------------------------------------------
-completion_map = {
-    "Procedure Phase": 20,
-    "Immediate Recovery": 85,
-    "Short-term Recovery": 65,
-    "Long-term Recovery": 40
-}
 
 stage_duration_map = {
     "Procedure Phase": "1–2 days",
@@ -87,7 +81,24 @@ stage_duration_map = {
     "Long-term Recovery": "3–12 months"
 }
 
+def compute_completion_scores(stage_counts):
 
+    total = sum(stage_counts.values())
+
+    if total == 0:
+        return {
+            "Procedure Phase": 20,
+            "Immediate Recovery": 40,
+            "Short-term Recovery": 60,
+            "Long-term Recovery": 80
+        }
+
+    completion = {}
+
+    for stage, count in stage_counts.items():
+        completion[stage] = int((count / total) * 100)
+
+    return completion
 # --------------------------------------------------
 # Stage Description Generator
 # --------------------------------------------------
@@ -118,18 +129,19 @@ def build_timeline_json(stage_counts):
 
     timeline = []
 
+    completion_scores = compute_completion_scores(stage_counts)
+
     for stage in stage_counts:
 
         timeline.append({
             "stage": stage,
             "duration": stage_duration_map.get(stage, ""),
             "description": generate_stage_description(stage),
-            "completion": completion_map.get(stage, 0),
+            "completion": completion_scores.get(stage, 0),
             "mentions": stage_counts[stage]
         })
 
     return timeline
-
 
 # --------------------------------------------------
 # Main Builder Function

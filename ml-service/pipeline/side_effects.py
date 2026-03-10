@@ -178,23 +178,27 @@ def estimate_severity_v4(corpus, terms,
 
             sentences = doc["text"].lower().split(".")
 
-            for s in sentences:
+            for i, s in enumerate(sentences):
 
                 if term in s:
 
-                    # Explicit severity words
+                    window = " ".join(
+                        sentences[max(0, i-1): min(len(sentences), i+2)]
+                    )
+
+                    # Severity words
                     for phrase, value in severity_modifiers.items():
-                        if phrase in s:
+                        if phrase in window:
                             scores.append(value)
 
-                    # Impact indicators
+                    # Impact
                     for phrase, value in impact_modifiers.items():
-                        if phrase in s:
+                        if phrase in window:
                             scores.append(value)
 
-                    # Duration indicators
+                    # Duration
                     for phrase, value in duration_modifiers.items():
-                        if phrase in s:
+                        if phrase in window:
                             scores.append(value)
 
         if scores:
@@ -203,7 +207,6 @@ def estimate_severity_v4(corpus, terms,
             severity_scores[term] = 0
 
     return severity_scores
-
 
 # ==============================
 # BUILD JSON

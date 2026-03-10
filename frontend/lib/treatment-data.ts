@@ -48,6 +48,14 @@ export interface TreatmentData {
     discussions: number
     url: string
   }>
+  success?: {
+    success_rate: number
+  }
+
+  cost?: {
+    min_cost: number
+    max_cost: number
+  }
 }
 
 const defaultTreatment: TreatmentData = {
